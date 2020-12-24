@@ -2,27 +2,23 @@
 
 | 型号      | XPS15-9550/MacBookPro13,3  | 版本     | 10.15.7 19H2 |
 | :-------- | :------------------------- | :------- | :------------------ |
-| 处理器 | Intel Core i5-6300HQ       | 核显 | HD Graphics 530     |
-| 内存    | Micron 2133MHz DDR4 8GB x2 | 存储     | Samsung PM961 512GB |
-| 声卡     | Realtek ALC298             | 网卡     | Dell Wireless 1830  |
-| 内屏   | Sharp LQ156D1 UHD          | 显示器  | HKC GF40 FHD 144Hz  |
+| 处理器 | Intel Core i7-6700HQ       | 核显 | HD Graphics 530     |
+| 内存   | 镁光 DDR4 2400MHz 16 * 2   | 存储     | THNSN5512GVU7 SAMPLE |
+| 声卡   | Realtek ALC298            | 网卡     | Dell Wireless 1830  |
+| 内屏   | Sharp SHP1453 UHD          | 显示器  | 无  |
 
 ### 不工作的设备
 
-- 独立显卡
+- 独立显卡 
 - 雷电
-- 蓝牙可能不工作（[解释](https://github.com/xxxzc/xps15-9570-macos/issues/26)）
+- 蓝牙的两种模式不会自动切换 stereo handsfree, 视频通话时会调用handsfree,导致背景雪花音
 
 ## 安装
 
 **请下载 [最新的 release](https://github.com/xxxzc/xps15-9550-macos/releases/latest)**。
+  201106-2 这个版本OC才行，其它的版本都会卡Logo和无法识别OC
 
-- INTEL：Intel 网卡版本
 - BRCM：博通/戴尔网卡版本。
-
-### Intel 网卡
-
-默认的 `AirportItlwm.kext` 是**用于 Catalina 的**，如果你在使用 Big Sur 或者其他版本的系统，请到 [OpenIntelWireless/itlwm](https://github.com/OpenIntelWireless/itlwm/releases) 下载并替换（开机后 Intel 网卡有很小几率不可用），你也可以换成 `itlwm.kext + HeliPort.app`，但别忘了更新 config.plist。
 
 ### Big Sur
 
@@ -34,7 +30,7 @@
 
 如果你的笔记本内屏是1080p，你需要修改以下配置：
 
-- OC:  `NVRAM/Add/4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14/UIScale`  -> `AQ==`
+- OC:  `NVRAM/Add/4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14/UIScale`  -> `01`
 - CLOVER: `BootGraphics/UIScale` -> `1`
 
 或者运行 `python3 update.py --display fhd`
@@ -85,6 +81,7 @@ sudo pmset -a proximitywake 0
 #### SmUUID
 
 建议你使用 Windows 的 UUID 作为 SmUUID，特别是如果你需要使用 OpenCore 启动 Windows：在 Windows 的 CMD 中运行 `wmic csproduct get UUID` 即可得到该 UUID。
+使用win10 安装盘的SmUUID，不用重复激活
 
 #### ROM
 
@@ -118,12 +115,82 @@ python3 update.py --set theme=xxx # will download if not exist
 
 如果你的 NTFS 分区装有 Windows，你需要先在 Windows 的 powershell 上运行 `powercfg -h off` 关闭 Windows 的休眠。
 
+1、打开应用程序 - 实用工具 - 终端 运行如下命令。来查看你的硬盘UUID。
+diskutil info /Volumes/MACX | grep UUID
+特别注意：用你的硬盘的名字替换掉 MACX
+2、再运行如下命令：
+echo "UUID=EC9AB3F7-9AF6-F2EC-C4EC-F22419F32464 none ntfs rw,auto,nobrowse" | sudo tee -a /etc/fstab
+用上一步操作得到的硬盘UUID替换命令行UUID=后面的字符，并且输入账户的密码 (如密码为空，请先创建密码。 输入密码不显示但实际已经输入)
+3、随后，当你再重新连接此 USB 设备的时候， 桌面上不再显示这个 USB 分区的白色盒子图标。 你需要按 Command-Shift-G  前往 /Volumes 卷宗目录。
+重启后，其它盘的就可以当作仓库盘
+
 ### 触摸板单双击延迟
 
 - 关闭拖拽或者使用三指拖拽可以避免单击的延迟
 - 关闭智能缩放可以避免双击的延迟
 
 参考 [is-it-possible-to-get-rid-of-the-delay-between-right-clicking-and-seeing-the-context-menu](https://apple.stackexchange.com/a/218181)
+
+尝试过程
+20201223
+尝试升级15.7，使用的黑果小兵制作的镜像，macOS Catalina 10.15.7(19H15) Installer for Clover 5126 and OC 0.6.3 and PE 32G
+
+第一次，配置好
+OC: NVRAM/Add/4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14/UIScale -> AQ==
+CLOVER: BootGraphics/UIScale -> 1
+和三码
+clover 卡logo OC: Failed to load configuration
+
+第二次，直接用下载的clover 和oc 症状相同
+
+update:
+201210 故障依旧
+201208 故障依旧
+200807 故障依旧
+201116-2 clover还是卡Logo OC能进入安装，但是磁盘抹除失败，EFI盘调到500M, 再次进入，识别不到硬盘
+明天再尝试
+update:201116-2
+修改OC config
+OC: NVRAM/Add/4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14/UIScale -> 01 每改成AQ==
+用win 的UUID 和生成的三码
+目前可以已经刷好 Catalina 15.7 9H2
+目前问题 声音有爆音
+bug
+使用safari 声音有爆音
+蓝牙bug, 蓝牙两种模式，视频，音乐等时，会调用stereo
+但是一旦视频通话，就会调用 handsfree, 然后就会有很大的杂音
+暂时解决办法，声音设置里，把输入改成电脑内置
+问题：视频通话和音频播放，只能存在一个？
+
+双系统问题
+把OC EFI拷贝到ESP启动盘，然后默认会在OC里启动win10,出现引导错误
+进PE修复，又会出现OC无法引导的总是，都在抢Boot.efi
+现在暂时是U盘引导，然后ESP引导win10, PD可以正常用bootcamp 使用双系统
+有知道的大佬麻烦 告知下双系统完美启动的方法
+
+双系统引导的问题
+尝试过以下路线
+1 将ESP区，EFI文件夹清空，移入OC引导文件夹，引导win10失败
+修复win10引导，OC失败
+2 参考https://imacos.top/2020/04/06/1559/
+用easyUEFI 加入OC选项，使用\EFI\OC\opencore.EFI
+并放在首位，引导win10失败
+3 参考https://imacos.top/2020/04/06/1559/
+用easyUEFI 加入OC选项，使用\EFI\OC\opencore.EFI
+将win10放在首位，OC 使用F12 手动引导
+进入系统后，使用parallels desktop ,bootcamp 引导win10 又变成OC引导，失败
+目前解决办法
+win10 boot camp 放首位
+OC放U盘引导，反正一般不断电就不重启
+
+4 最终解决办法
+win10 boot camp 放首位
+系统默认进入win10
+修改config文件，boot\ 移除microsoft 选项，使得parallels desktop 用boot camp 启动时，不调用OC而是直接调用win10的
+后续再把OC调到首位看行不行
+目前，开机可以手动选择进入 win10 或是 Mac parallels desktop 也可以用boot camp 启动
+
+EFI文件打包上传至repl
 
 ## 感谢
 
